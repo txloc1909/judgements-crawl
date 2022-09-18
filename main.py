@@ -17,13 +17,13 @@ ROOT_URL = "https://congbobanan.toaan.gov.vn/0tat1cvn/ban-an-quyet-dinh/"
 
 
 def load_keywords(keyword_file):
-    with open(keyword_file, "r") as f:
+    with open(keyword_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
         return [line.strip() for line in lines]
 
 
 def load_court_name(court_file):
-    with open(court_file, "r") as f:
+    with open(court_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
         if len(lines) == 0:
             raise RuntimeError("No court name found")
@@ -178,7 +178,7 @@ def main(args):
                 except StaleElementReferenceException:
                     logging.debug("stale!!!")
 
-            with open(output_file, "a") as f:
+            with open(output_file, "a", encoding="utf-8") as f:
                 writer = csv.writer(f)
                 for row in found:
                     writer.writerow(row)
