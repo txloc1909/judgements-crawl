@@ -14,6 +14,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import ElementNotVisibleException
 from selenium.common.exceptions import ElementNotSelectableException
+from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -74,168 +75,166 @@ def main(args):
     opts = FirefoxOptions()
     opts.add_argument("--headless")
 
-    browser = Firefox(options=opts)
-    browser.get(ROOT_URL)
+    with Firefox(options=opts) as browser:
+        browser.get(ROOT_URL)
 
-    other_radio_button = browser.find_element(By.XPATH, "//*[@type='radio'][@value=13]")
-    other_radio_button.click()
-
-    confirm_button = browser.find_element(
-        By.XPATH, "//*[@type='submit'][@value='Xác nhận']"
-    )
-    confirm_button.click()
-
-    if args.level:
-        cap_toa_an_options = browser.find_element(
-            By.ID, "ctl00_Content_home_Public_ctl00_Drop_Levels_top"
+        other_radio_button = browser.find_element(
+            By.XPATH, "//*[@type='radio'][@value=13]"
         )
-        cap_toa_an_options.click()
-        cap_toa_an_dropdown = Select(cap_toa_an_options)
-        cap_toa_an_dropdown.select_by_value(args.level)
+        other_radio_button.click()
 
-    if args.judgement:
-        for attempt in range(3):
-            try:
-                banan_quyetdinh_options = browser.find_element(
-                    By.ID,
-                    "ctl00_Content_home_Public_ctl00_Drop_STATUS_JUDGMENT_SEARCH_top",
-                )
-                banan_quyetdinh_options.click()
-                banan_quyetdinh_dropdown = Select(banan_quyetdinh_options)
-                banan_quyetdinh_dropdown.select_by_value(args.judgement)
-            except StaleElementReferenceException:
-                continue
-            else:
-                break
-        else:  # no break
-            browser.close()
-            raise RuntimeError("Cannot select judgement/decision")
-
-    if args.court:
-        toaan_options = browser.find_element(
-            By.ID, "ctl00_Content_home_Public_ctl00_Ra_Drop_Courts_top_chosen"
+        confirm_button = browser.find_element(
+            By.XPATH, "//*[@type='submit'][@value='Xác nhận']"
         )
-        toaan_options.click()
-        toaan_input = browser.find_element(
-            By.XPATH,
-            "//*[@class='chosen-search-input'][@type='text'][@autocomplete='off']",
-        )
-        toaan_input.send_keys(court_name)
-        toaan_input.send_keys(Keys.ENTER)
+        confirm_button.click()
 
-    if args.type:
-        for attempt in range(3):
-            try:
-                loaivuviec_options = browser.find_element(
-                    By.ID,
-                    "ctl00_Content_home_Public_ctl00_Drop_CASES_STYLES_SEARCH_top",
-                )
-                loaivuviec_options.click()
-                loaivuviec_dropdown = Select(loaivuviec_options)
-                loaivuviec_dropdown.select_by_value(str(args.type))
-            except StaleElementReferenceException:
-                continue
-            else:
-                break
-        else:  # no break
-            browser.close()
-            raise RuntimeError("Cannot select")
+        if args.level:
+            cap_toa_an_options = browser.find_element(
+                By.ID, "ctl00_Content_home_Public_ctl00_Drop_Levels_top"
+            )
+            cap_toa_an_options.click()
+            cap_toa_an_dropdown = Select(cap_toa_an_options)
+            cap_toa_an_dropdown.select_by_value(args.level)
 
-    search_button = browser.find_element(
-        By.ID, "ctl00_Content_home_Public_ctl00_cmd_search_banner"
-    )
-    search_button.click()
-
-    pagenum_button = browser.find_element(
-        By.ID, "ctl00_Content_home_Public_ctl00_DropPages"
-    )
-    pagenum_dropdown = Select(pagenum_button)
-    num_pages = len(pagenum_dropdown.options)
-    logging.info(f"Num pages: {num_pages}")
-
-    if args.start_from > num_pages:
-        browser.close()
-        raise RuntimeError("Invalid start page")
-
-    pagenum_dropdown.select_by_value(str(args.start_from))
-
-    logging.info(f"Start at page {args.start_from}")
-    try:
-        for i in range(args.start_from, num_pages + 1):
-            current_page = str(i)
-            logging.info(f"Page: {current_page}")
-            result_list = browser.find_element(By.ID, "List_group_pub")
-            results = result_list.find_elements(By.CLASS_NAME, "list-group-item")
-
-            found = []
-            for res in results:
-                # extract info here
+        if args.judgement:
+            for attempt in range(3):
                 try:
-                    if not any(kw in res.text for kw in keywords):
-                        continue
-
-                    matches = ",".join(kw for kw in keywords if kw in res.text)
-                    title, link = extract_info(res)
-                    print(",".join([matches, title, link]))
-                    found.append([matches, title, link])
-
+                    banan_quyetdinh_options = browser.find_element(
+                        By.ID,
+                        "ctl00_Content_home_Public_ctl00_Drop_STATUS_JUDGMENT_SEARCH_top",
+                    )
+                    banan_quyetdinh_options.click()
+                    banan_quyetdinh_dropdown = Select(banan_quyetdinh_options)
+                    banan_quyetdinh_dropdown.select_by_value(args.judgement)
                 except StaleElementReferenceException:
-                    logging.debug("stale!!!")
-
-            with open(output_file, "a", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                for row in found:
-                    writer.writerow(row)
-
-            try:
-                wait = WebDriverWait(browser, 5)
-                _ = wait.until(
-                    EC.text_to_be_present_in_element_value(
-                        (By.ID, "ctl00_Content_home_Public_ctl00_DropPages"),
-                        current_page,
-                    )
-                )
-            except TimeoutException:
-                pass
-
-            wait2 = WebDriverWait(browser, 5)
-            try:
-                nextpage_button = wait2.until(
-                    EC.element_to_be_clickable(
-                        (By.ID, "ctl00_Content_home_Public_ctl00_cmdnext")
-                    )
-                )
-            except TimeoutException:
-                if num_pages > 1:
-                    raise RuntimeError("Cannot press next page")
+                    continue
                 else:
-                    nextpage_button = None
+                    break
+            else:  # no break
+                raise RuntimeError("Cannot select judgement/decision")
 
-            # close an unexpected backdrop covering the entire page
-            try:
-                close_backdrop_button = browser.find_element(
-                    By.CLASS_NAME, "backdrop-close"
-                )
-                close_backdrop_button.click()
-                logging.info("Successfully close backdrop")
-            except (
-                NoSuchElementException,
-                ElementNotVisibleException,
-                ElementNotSelectableException,
-            ):
-                logging.info("No backdrop appeared")
-            except Exception as e:
-                logging.info(f"Cannot close backdrop due to unknown exception: {e}")
-                pass
+        if args.court:
+            toaan_options = browser.find_element(
+                By.ID, "ctl00_Content_home_Public_ctl00_Ra_Drop_Courts_top_chosen"
+            )
+            toaan_options.click()
+            toaan_input = browser.find_element(
+                By.XPATH,
+                "//*[@class='chosen-search-input'][@type='text'][@autocomplete='off']",
+            )
+            toaan_input.send_keys(court_name)
+            toaan_input.send_keys(Keys.ENTER)
 
-            if nextpage_button:
-                nextpage_button.click()
+        if args.type:
+            for attempt in range(3):
+                try:
+                    loaivuviec_options = browser.find_element(
+                        By.ID,
+                        "ctl00_Content_home_Public_ctl00_Drop_CASES_STYLES_SEARCH_top",
+                    )
+                    loaivuviec_options.click()
+                    loaivuviec_dropdown = Select(loaivuviec_options)
+                    loaivuviec_dropdown.select_by_value(str(args.type))
+                except StaleElementReferenceException:
+                    continue
+                else:
+                    break
+            else:  # no break
+                raise RuntimeError("Cannot select")
 
-            browser.implicitly_wait(5)
-    except KeyboardInterrupt:
-        logging.info("Interrupted!")
-    finally:
-        browser.close()
+        search_button = browser.find_element(
+            By.ID, "ctl00_Content_home_Public_ctl00_cmd_search_banner"
+        )
+        search_button.click()
+
+        pagenum_button = browser.find_element(
+            By.ID, "ctl00_Content_home_Public_ctl00_DropPages"
+        )
+        pagenum_dropdown = Select(pagenum_button)
+        num_pages = len(pagenum_dropdown.options)
+        logging.info(f"Num pages: {num_pages}")
+
+        if args.start_from > num_pages:
+            raise RuntimeError("Invalid start page")
+
+        pagenum_dropdown.select_by_value(str(args.start_from))
+
+        logging.info(f"Start at page {args.start_from}")
+        try:
+            for i in range(args.start_from, num_pages + 1):
+                current_page = str(i)
+                logging.info(f"Page: {current_page}")
+                result_list = browser.find_element(By.ID, "List_group_pub")
+                results = result_list.find_elements(By.CLASS_NAME, "list-group-item")
+
+                found = []
+                for res in results:
+                    # extract info here
+                    try:
+                        if not any(kw in res.text for kw in keywords):
+                            continue
+
+                        matches = ",".join(kw for kw in keywords if kw in res.text)
+                        title, link = extract_info(res)
+                        print(",".join([matches, title, link]))
+                        found.append([matches, title, link])
+
+                    except StaleElementReferenceException:
+                        logging.debug("stale!!!")
+
+                with open(output_file, "a", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    for row in found:
+                        writer.writerow(row)
+
+                try:
+                    wait = WebDriverWait(browser, 5)
+                    _ = wait.until(
+                        EC.text_to_be_present_in_element_value(
+                            (By.ID, "ctl00_Content_home_Public_ctl00_DropPages"),
+                            current_page,
+                        )
+                    )
+                except TimeoutException:
+                    pass
+
+                wait2 = WebDriverWait(browser, 5)
+                try:
+                    nextpage_button = wait2.until(
+                        EC.element_to_be_clickable(
+                            (By.ID, "ctl00_Content_home_Public_ctl00_cmdnext")
+                        )
+                    )
+                except TimeoutException:
+                    if num_pages > 1:
+                        raise RuntimeError("Cannot press next page")
+                    else:
+                        nextpage_button = None
+
+                # close an unexpected backdrop covering the entire page
+                try:
+                    close_backdrop_button = browser.find_element(
+                        By.CLASS_NAME, "backdrop-close"
+                    )
+                    close_backdrop_button.click()
+                    logging.info("Successfully close backdrop")
+                except (
+                    NoSuchElementException,
+                    ElementNotVisibleException,
+                    ElementNotSelectableException,
+                    ElementNotInteractableException,
+                ):
+                    logging.info("No backdrop appeared")
+                except Exception as e:
+                    logging.info(f"Cannot close backdrop due to unknown exception: {e}")
+                    print(type(e))
+
+                if nextpage_button:
+                    nextpage_button.click()
+
+                browser.implicitly_wait(5)
+        except KeyboardInterrupt:
+            logging.info("Interrupted!")
 
 
 if __name__ == "__main__":
