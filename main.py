@@ -9,7 +9,11 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import ElementNotVisibleException
+from selenium.common.exceptions import ElementNotSelectableException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -195,19 +199,38 @@ def main(args):
                 pass
 
             wait2 = WebDriverWait(browser, 5)
-            for _ in range(3):
-                done = wait2.until(
+            try:
+                nextpage_button = wait2.until(
                     EC.element_to_be_clickable(
                         (By.ID, "ctl00_Content_home_Public_ctl00_cmdnext")
                     )
                 )
-                if done:
-                    break
+            except TimeoutException:
+                if num_pages > 1:
+                    raise RuntimeError("Cannot press next page")
+                else:
+                    nextpage_button = None
 
-            nextpage_button = browser.find_element(
-                By.ID, "ctl00_Content_home_Public_ctl00_cmdnext"
-            )
-            nextpage_button.click()
+            # close an unexpected backdrop covering the entire page
+            try:
+                close_backdrop_button = browser.find_element(
+                    By.CLASS_NAME, "backdrop-close"
+                )
+                close_backdrop_button.click()
+                logging.info("Successfully close backdrop")
+            except (
+                NoSuchElementException,
+                ElementNotVisibleException,
+                ElementNotSelectableException,
+            ):
+                logging.info("No backdrop appeared")
+            except Exception as e:
+                logging.info(f"Cannot close backdrop due to unknown exception: {e}")
+                pass
+
+            if nextpage_button:
+                nextpage_button.click()
+
             browser.implicitly_wait(5)
     except KeyboardInterrupt:
         logging.info("Interrupted!")
