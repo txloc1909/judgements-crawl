@@ -80,6 +80,25 @@ def choose_court(browser, court_name):
     toaan_input.send_keys(Keys.ENTER)
 
 
+def choose_case_type(browser, type_):
+    # TODO: find out what happen in this step, in order to mitigate this fix
+    for attempt in range(3):
+        try:
+            loaivuviec_options = browser.find_element(
+                By.ID,
+                "ctl00_Content_home_Public_ctl00_Drop_CASES_STYLES_SEARCH_top",
+            )
+            loaivuviec_options.click()
+            loaivuviec_dropdown = Select(loaivuviec_options)
+            loaivuviec_dropdown.select_by_value(str(type_))
+        except StaleElementReferenceException:
+            continue
+        else:
+            break
+    else:  # no break
+        raise RuntimeError("Cannot select")
+
+
 def extract_info(element):
     title = element.text.split("\n")[0]
     link = element.find_element(By.CLASS_NAME, "echo_id_pub").get_attribute("href")
@@ -132,21 +151,7 @@ def main(args):
             choose_court(browser, court_name)
 
         if args.type:
-            for attempt in range(3):
-                try:
-                    loaivuviec_options = browser.find_element(
-                        By.ID,
-                        "ctl00_Content_home_Public_ctl00_Drop_CASES_STYLES_SEARCH_top",
-                    )
-                    loaivuviec_options.click()
-                    loaivuviec_dropdown = Select(loaivuviec_options)
-                    loaivuviec_dropdown.select_by_value(str(args.type))
-                except StaleElementReferenceException:
-                    continue
-                else:
-                    break
-            else:  # no break
-                raise RuntimeError("Cannot select")
+            choose_case_type(browser, args.type)
 
         search_button = browser.find_element(
             By.ID, "ctl00_Content_home_Public_ctl00_cmd_search_banner"
