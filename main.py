@@ -57,6 +57,16 @@ def choose_court_level(browser, level):
     cap_toa_an_dropdown.select_by_value(level)
 
 
+def choose_judgement_type(browser, judgement):
+    banan_quyetdinh_options = browser.find_element(
+        By.ID,
+        "ctl00_Content_home_Public_ctl00_Drop_STATUS_JUDGMENT_SEARCH_top",
+    )
+    banan_quyetdinh_options.click()
+    banan_quyetdinh_dropdown = Select(banan_quyetdinh_options)
+    banan_quyetdinh_dropdown.select_by_value(judgement)
+
+
 def extract_info(element):
     title = element.text.split("\n")[0]
     link = element.find_element(By.CLASS_NAME, "echo_id_pub").get_attribute("href")
@@ -103,21 +113,7 @@ def main(args):
             choose_court_level(browser, args.level)
 
         if args.judgement:
-            for attempt in range(3):
-                try:
-                    banan_quyetdinh_options = browser.find_element(
-                        By.ID,
-                        "ctl00_Content_home_Public_ctl00_Drop_STATUS_JUDGMENT_SEARCH_top",
-                    )
-                    banan_quyetdinh_options.click()
-                    banan_quyetdinh_dropdown = Select(banan_quyetdinh_options)
-                    banan_quyetdinh_dropdown.select_by_value(args.judgement)
-                except StaleElementReferenceException:
-                    continue
-                else:
-                    break
-            else:  # no break
-                raise RuntimeError("Cannot select judgement/decision")
+            choose_judgement_type(browser, args.judgement)
 
         if args.court:
             toaan_options = browser.find_element(
