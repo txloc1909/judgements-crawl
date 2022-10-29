@@ -48,6 +48,15 @@ def get_pass_survey(browser):
     confirm_button.click()
 
 
+def choose_court_level(browser, level):
+    cap_toa_an_options = browser.find_element(
+        By.ID, "ctl00_Content_home_Public_ctl00_Drop_Levels_top"
+    )
+    cap_toa_an_options.click()
+    cap_toa_an_dropdown = Select(cap_toa_an_options)
+    cap_toa_an_dropdown.select_by_value(level)
+
+
 def extract_info(element):
     title = element.text.split("\n")[0]
     link = element.find_element(By.CLASS_NAME, "echo_id_pub").get_attribute("href")
@@ -91,12 +100,7 @@ def main(args):
         get_pass_survey(browser)
 
         if args.level:
-            cap_toa_an_options = browser.find_element(
-                By.ID, "ctl00_Content_home_Public_ctl00_Drop_Levels_top"
-            )
-            cap_toa_an_options.click()
-            cap_toa_an_dropdown = Select(cap_toa_an_options)
-            cap_toa_an_dropdown.select_by_value(args.level)
+            choose_court_level(browser, args.level)
 
         if args.judgement:
             for attempt in range(3):
