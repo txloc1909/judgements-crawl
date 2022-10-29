@@ -67,6 +67,19 @@ def choose_judgement_type(browser, judgement):
     banan_quyetdinh_dropdown.select_by_value(judgement)
 
 
+def choose_court(browser, court_name):
+    toaan_options = browser.find_element(
+        By.ID, "ctl00_Content_home_Public_ctl00_Ra_Drop_Courts_top_chosen"
+    )
+    toaan_options.click()
+    toaan_input = browser.find_element(
+        By.XPATH,
+        "//*[@class='chosen-search-input'][@type='text'][@autocomplete='off']",
+    )
+    toaan_input.send_keys(court_name)
+    toaan_input.send_keys(Keys.ENTER)
+
+
 def extract_info(element):
     title = element.text.split("\n")[0]
     link = element.find_element(By.CLASS_NAME, "echo_id_pub").get_attribute("href")
@@ -116,16 +129,7 @@ def main(args):
             choose_judgement_type(browser, args.judgement)
 
         if args.court:
-            toaan_options = browser.find_element(
-                By.ID, "ctl00_Content_home_Public_ctl00_Ra_Drop_Courts_top_chosen"
-            )
-            toaan_options.click()
-            toaan_input = browser.find_element(
-                By.XPATH,
-                "//*[@class='chosen-search-input'][@type='text'][@autocomplete='off']",
-            )
-            toaan_input.send_keys(court_name)
-            toaan_input.send_keys(Keys.ENTER)
+            choose_court(browser, court_name)
 
         if args.type:
             for attempt in range(3):
