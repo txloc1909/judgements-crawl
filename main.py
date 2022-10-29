@@ -38,6 +38,16 @@ def load_court_name(court_file):
         return lines[0].strip()
 
 
+def get_pass_survey(browser):
+    other_radio_button = browser.find_element(By.XPATH, "//*[@type='radio'][@value=13]")
+    other_radio_button.click()
+
+    confirm_button = browser.find_element(
+        By.XPATH, "//*[@type='submit'][@value='Xác nhận']"
+    )
+    confirm_button.click()
+
+
 def extract_info(element):
     title = element.text.split("\n")[0]
     link = element.find_element(By.CLASS_NAME, "echo_id_pub").get_attribute("href")
@@ -78,15 +88,7 @@ def main(args):
     with Firefox(options=opts) as browser:
         browser.get(ROOT_URL)
 
-        other_radio_button = browser.find_element(
-            By.XPATH, "//*[@type='radio'][@value=13]"
-        )
-        other_radio_button.click()
-
-        confirm_button = browser.find_element(
-            By.XPATH, "//*[@type='submit'][@value='Xác nhận']"
-        )
-        confirm_button.click()
+        get_pass_survey(browser)
 
         if args.level:
             cap_toa_an_options = browser.find_element(
