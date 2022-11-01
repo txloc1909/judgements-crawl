@@ -1,0 +1,41 @@
+diff --git a/main.py b/main.py
+index a020dc4..6914e7d 100644
+--- a/main.py
++++ b/main.py
+@@ -103,21 +103,21 @@ def main(args):
+             choose_court_level(browser, args.level)
+ 
+         if args.judgement:
+-            for attempt in range(3):
+-                try:
+-                    banan_quyetdinh_options = browser.find_element(
+-                        By.ID,
+-                        "ctl00_Content_home_Public_ctl00_Drop_STATUS_JUDGMENT_SEARCH_top",
+-                    )
+-                    banan_quyetdinh_options.click()
+-                    banan_quyetdinh_dropdown = Select(banan_quyetdinh_options)
+-                    banan_quyetdinh_dropdown.select_by_value(args.judgement)
+-                except StaleElementReferenceException:
+-                    continue
+-                else:
+-                    break
+-            else:  # no break
+-                raise RuntimeError("Cannot select judgement/decision")
++            #     for attempt in range(3):
++            #         try:
++            banan_quyetdinh_options = browser.find_element(
++                By.ID,
++                "ctl00_Content_home_Public_ctl00_Drop_STATUS_JUDGMENT_SEARCH_top",
++            )
++            banan_quyetdinh_options.click()
++            banan_quyetdinh_dropdown = Select(banan_quyetdinh_options)
++            banan_quyetdinh_dropdown.select_by_value(args.judgement)
++        # except StaleElementReferenceException:
++        #     continue
++        # else:
++        #     break
++        # else:  # no break
++        # raise RuntimeError("Cannot select judgement/decision")
+ 
+         if args.court:
+             toaan_options = browser.find_element(

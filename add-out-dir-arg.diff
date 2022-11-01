@@ -1,0 +1,35 @@
+diff --git a/main.py b/main.py
+index a020dc4..a96d0b9 100644
+--- a/main.py
++++ b/main.py
+@@ -3,6 +3,7 @@ import os
+ import logging
+ import csv
+ from argparse import ArgumentParser
++from pathlib import Path
+ 
+ from selenium.webdriver import Firefox
+ from selenium.webdriver.firefox.options import Options as FirefoxOptions
+@@ -20,6 +21,9 @@ from selenium.webdriver.support import expected_conditions as EC
+ 
+ ROOT_URL = "https://congbobanan.toaan.gov.vn/0tat1cvn/ban-an-quyet-dinh/"
+ 
++DOWNLOAD_DIR = Path.home() / "Downloads"
++assert DOWNLOAD_DIR.exists(), f"Download dir ({DOWNLOAD_DIR}) not found"
++
+ 
+ def load_keywords(keyword_file):
+     with open(keyword_file, "r", encoding="utf-8") as f:
+@@ -291,5 +295,12 @@ if __name__ == "__main__":
+         required=False,
+         help="Start from page",
+     )
++    parser.add_argument(
++        "--out_dir",
++        default=str(DOWNLOAD_DIR),
++        type=str,
++        required=False,
++        help="Directory to save downloaded PDF files",
++    )
+     args = parser.parse_args()
+     main(args)
